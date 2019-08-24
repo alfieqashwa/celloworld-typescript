@@ -1,106 +1,157 @@
-/**
- * Configure your Gatsby site with this file.
- *
- * See: https://www.gatsbyjs.org/docs/gatsby-config/
- */
+const config = require('./config/website')
+const pathPrefix = config.pathPrefix === '/' ? '' : config.pathPrefix
+
+require('dotenv').config({
+  path: `.env.${process.env.NODE_ENV}`,
+})
 
 module.exports = {
+  pathPrefix: config.pathPrefix,
   siteMetadata: {
-    title: 'Celloworld',
-    description: 'Alfie Qashwa Personal Site to Learn In The Clouds As Dead As Leaves.',
-    siteUrl: 'https://www.alfieqashwa.me',
+    siteUrl: config.siteUrl + pathPrefix,
+    title: config.siteTitle,
+    twitterHandle: config.twitterHandle,
+    description: config.siteDescription,
+    keywords: ['Video Blogger'],
+    canonicalUrl: config.siteUrl,
+    image: config.siteLogo,
     author: {
-      name: 'Alfie Qashwa',
-      url: 'https://twitter.com/alfieqashwa',
-      email: 'alfieqashwa@gmail.com',
+      name: config.author,
+      minibio: `
+        <strong>egghead</strong> is the premier place on the internet for
+        experienced developers to enhance their skills and stay current
+        in the fast-faced field of web development.
+      `,
+    },
+    organization: {
+      name: config.organization,
+      url: config.siteUrl,
+      logo: config.siteLogo,
     },
     social: {
-      twitter: 'https://twitter.com/alfieqashwa',
-      github: 'https://github.com/alfieqashwa',
+      twitter: config.twitterHandle,
+      fbAppID: '',
     },
   },
   plugins: [
     {
-      resolve: `gatsby-source-filesystem`,
+      resolve: 'gatsby-source-filesystem',
       options: {
-        path: `${__dirname}/content/posts`,
-        name: `posts`,
-      },
-    },
-    {
-      resolve: `gatsby-source-filesystem`,
-      options: {
-        path: `${__dirname}/content/assets`,
-        name: `assets`,
-      },
-    },
-    {
-      resolve: 'gatsby-plugin-google-analytics',
-      options: {
-        // trackingId: `ADD YOUR TRACKING ID HERE`,
+        path: `${__dirname}/content/blog`,
+        name: 'blog',
       },
     },
     {
       resolve: `gatsby-plugin-mdx`,
       options: {
+        extensions: ['.mdx', '.md', '.markdown'],
         gatsbyRemarkPlugins: [
           {
-            resolve: `gatsby-remark-external-links`,
+            resolve: 'gatsby-remark-images',
             options: {
-              target: '_blank',
-              rel: 'nofollow noopener noreferrer',
-            },
-          },
-          {
-            resolve: `gatsby-remark-images`,
-            options: {
-              maxWidth: 1280,
-            },
-          },
-          {
-            resolve: `gatsby-remark-responsive-iframe`,
-            options: {
-              wrapperStyle: `margin-bottom: 1.0725rem`,
-            },
-          },
-          // TODO: Replace with "mdx-component-autolink-headers"
-          {
-            resolve: 'gatsby-remark-autolink-headers',
-            options: {
-              maintainCase: false,
+              backgroundColor: '#fafafa',
+              maxWidth: 1035,
             },
           },
         ],
-        plugins: [
-          `gatsby-remark-images`,
-          `gatsby-remark-autolink-headers`,
-          `gatsby-remark-copy-linked-files`,
-          `gatsby-remark-smartypants`,
+      },
+    },
+    'gatsby-plugin-sharp',
+    'gatsby-transformer-sharp',
+    'gatsby-plugin-emotion',
+    'gatsby-plugin-catch-links',
+    'gatsby-plugin-react-helmet',
+    {
+      resolve: 'gatsby-plugin-manifest',
+      options: {
+        name: config.siteTitle,
+        short_name: config.siteTitleShort,
+        description: config.siteDescription,
+        start_url: config.pathPrefix,
+        background_color: config.backgroundColor,
+        theme_color: config.themeColor,
+        display: 'standalone',
+        icons: [
+          {
+            src: '/android-chrome-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/android-chrome-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
         ],
       },
     },
     {
-      resolve: `gatsby-plugin-canonical-urls`,
+      resolve: `gatsby-plugin-google-analytics`,
       options: {
-        siteUrl: `https://alfieqashwa.me`,
+        trackingId: `GOOGLE_ID`,
       },
     },
     {
-      resolve: `gatsby-plugin-manifest`,
+      resolve: `gatsby-plugin-feed`,
       options: {
-        name: `Alfie Qashwa`,
-        short_name: `alfieqashwa.me`,
-        start_url: `/`,
-        background_color: `#ffffff`,
-        theme_color: `#663399`,
-        display: `minimal-ui`,
-        icon: `static/logo.png`,
+        query: `
+          {
+            site {
+              siteMetadata {
+                title
+                description
+                siteUrl
+                site_url: siteUrl
+              }
+            }
+          }
+        `,
+        feeds: [
+          {
+            serialize: ({query: {site, allMdx}}) => {
+              return allMdx.edges.map(edge => {
+                return Object.assign({}, edge.node.frontmatter, {
+                  description: edge.node.excerpt,
+                  date: edge.node.fields.date,
+                  url: site.siteMetadata.siteUrl + '/' + edge.node.fields.slug,
+                  guid: site.siteMetadata.siteUrl + '/' + edge.node.fields.slug,
+                })
+              })
+            },
+            query: `
+              {
+                allMdx(
+                  limit: 1000,
+                  filter: { frontmatter: { published: { ne: false } } }
+                  sort: { order: DESC, fields: [frontmatter___date] }
+                ) {
+                  edges {
+                    node {
+                      excerpt(pruneLength: 250)
+                      fields {
+                        slug
+                        date
+                      }
+                      frontmatter {
+                        title
+                      }
+                    }
+                  }
+                }
+              }
+            `,
+            output: '/rss.xml',
+            title: 'Blog RSS Feed',
+          },
+        ],
       },
     },
-    `gatsby-plugin-react-helmet`,
-    `gatsby-plugin-sharp`,
-    `gatsby-plugin-typescript`,
-    `gatsby-transformer-sharp`,
+    // {
+    //   resolve: `gatsby-plugin-typography`,
+    //   options: {
+    //     pathToConfigModule: `src/lib/typography`,
+    //   },
+    // },
     // 'gatsby-plugin-offline',
   ],
 }
