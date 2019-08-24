@@ -37,7 +37,7 @@ module.exports = {
     {
       resolve: 'gatsby-plugin-google-analytics',
       options: {
-        // trackingId: '',
+        // trackingId: `ADD YOUR TRACKING ID HERE`,
       },
     },
     {
@@ -55,6 +55,12 @@ module.exports = {
             resolve: `gatsby-remark-images`,
             options: {
               maxWidth: 1280,
+            },
+          },
+          {
+            resolve: `gatsby-remark-responsive-iframe`,
+            options: {
+              wrapperStyle: `margin-bottom: 1.0725rem`,
             },
           },
           // TODO: Replace with "mdx-component-autolink-headers"
